@@ -14,10 +14,15 @@ calculation, and runs without a user interface. It replaced EDSL Tas for this co
 ## 🏗️ Project Architecture & Assemblies
 
 The repository contains the following assemblies:
-* **[DiGi.EnergyPlus](DiGi.EnergyPlus)** (Path: `DiGi.EnergyPlus\DiGi.EnergyPlus`, `netstandard2.0`) - the IDF writer
-  `Convert.ToEnergyPlus_String`, written for EnergyPlus 26.2. The command-line runner (`Modify.RunAsync`) and the results
-  reader (`Convert.ToDiGi_EnergyPlusResult`) follow under
-  [#1](https://github.com/DiGi-Organization/DiGi.EnergyPlus/issues/1).
+* **[DiGi.EnergyPlus](DiGi.EnergyPlus)** (Path: `DiGi.EnergyPlus\DiGi.EnergyPlus`, `net10.0`) - for EnergyPlus 26.2:
+  * `Convert.ToEnergyPlus_String` - the IDF writer;
+  * `Modify.RunAsync` - runs the command line in a run directory, logging a failure through DiGi.Serilog;
+  * `Convert.ToDiGi_EnergyPlusResult` - reads the run directory into an `EnergyPlusResult`: the monthly and annual
+    sensible heating energy [kWh], the U EnergyPlus reports for each external surface, the version and the warning and
+    severe error counts.
+
+  It targets `net10.0` rather than `netstandard2.0` because DiGi.Serilog does, so .NET Framework hosts cannot reference
+  it.
 
 ### What the IDF carries
 
@@ -43,8 +48,20 @@ The model it exports is the one the heat-demand engine calculates on, taken from
 
 ## ⚙️ EnergyPlus installation
 
-EnergyPlus is not shipped with this repository. Install the version pinned in the library's `Constants`; its executable
-path is a machine setting and belongs in a git-ignored `user files/*.conf`, never in code.
+EnergyPlus is not shipped with this repository. Install the version pinned in `Constants.Default.Version` (26.2.0, the
+Windows x86_64 installer of the [NREL/EnergyPlus releases](https://github.com/NREL/EnergyPlus/releases)). Its path is a
+machine setting, so it lives in a git-ignored `user files/EnergyPlus_Executable.conf`, never in code:
+
+```text
+ExecutablePath=C:\EnergyPlusV26-2-0\energyplus.exe
+```
+
+`Query.ExecutablePath(directory)` reads it. The facts in `DiGi.Test/DiGi.EnergyPlus.xUnit` read it from
+`DiGi.Test/user files/`: without the conf, the fact that runs EnergyPlus returns without asserting. A conf that names
+no existing executable fails it.
+
+A run of the in-code box ends with one warning - the zone is not fully enclosed, because the thermal-bridge surface
+stands apart from the shell. It is expected, since the zone volume is given explicitly.
 
 ---
 

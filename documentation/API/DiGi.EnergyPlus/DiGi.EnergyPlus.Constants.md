@@ -94,6 +94,19 @@ public const string Roughness = "MediumRough";
 #### Field Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
 
+<a name='DiGi.EnergyPlus.Constants.Default.RunInactivityTimeout'></a>
+
+## Default\.RunInactivityTimeout Field
+
+The span without a line of output after which a run is ended \[min\]\. EnergyPlus reports every simulated month, so a quiet run has hung\.
+
+```csharp
+public const int RunInactivityTimeout = 10;
+```
+
+#### Field Value
+[System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
+
 <a name='DiGi.EnergyPlus.Constants.Default.ThermalAbsorptance'></a>
 
 ## Default\.ThermalAbsorptance Field
@@ -172,6 +185,97 @@ public const double VisibleAbsorptance = 0.7;
 #### Field Value
 [System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
+<a name='DiGi.EnergyPlus.Constants.FileName'></a>
+
+## FileName Class
+
+Names of the files of an EnergyPlus run \(DiGi\-Organization/DiGi\.EnergyPlus\#1\)\.
+
+```csharp
+public static class FileName
+```
+
+Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') → FileName
+### Fields
+
+<a name='DiGi.EnergyPlus.Constants.FileName.Error'></a>
+
+## FileName\.Error Field
+
+The error file EnergyPlus writes: version, warnings, severe errors and whether the run completed\.
+
+```csharp
+public const string Error = "eplusout.err";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.FileName.ExecutableConfiguration'></a>
+
+## FileName\.ExecutableConfiguration Field
+
+The git\-ignored conf naming the EnergyPlus executable on this machine, read from a `user files` directory\.
+
+```csharp
+public const string ExecutableConfiguration = "EnergyPlus_Executable.conf";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.FileName.Input'></a>
+
+## FileName\.Input Field
+
+The input file written into the run directory\.
+
+```csharp
+public const string Input = "in.idf";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.FileName.Tables'></a>
+
+## FileName\.Tables Field
+
+The tabular reports EnergyPlus writes in the comma style\.
+
+```csharp
+public const string Tables = "eplustbl.csv";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.FileName.Variables'></a>
+
+## FileName\.Variables Field
+
+The variables EnergyPlus reports, written by ReadVarsESO\.
+
+```csharp
+public const string Variables = "eplusout.csv";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.FileName.Weather'></a>
+
+## FileName\.Weather Field
+
+The weather file copied into the run directory\.
+
+```csharp
+public const string Weather = "in.epw";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
 <a name='DiGi.EnergyPlus.Constants.Name'></a>
 
 ## Name Class
@@ -185,6 +289,19 @@ public static class Name
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') → Name
 ### Fields
 
+<a name='DiGi.EnergyPlus.Constants.Name.ExecutablePathKey'></a>
+
+## Name\.ExecutablePathKey Field
+
+The key of the executable path in [ExecutableConfiguration](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.ExecutableConfiguration 'DiGi\.EnergyPlus\.Constants\.FileName\.ExecutableConfiguration')\.
+
+```csharp
+public const string ExecutablePathKey = "ExecutablePath";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
 <a name='DiGi.EnergyPlus.Constants.Name.GroundOtherSideCoefficients'></a>
 
 ## Name\.GroundOtherSideCoefficients Field
@@ -193,6 +310,19 @@ The name of the other\-side coefficients that hold the outside face of a floor o
 
 ```csharp
 public const string GroundOtherSideCoefficients = "Ground";
+```
+
+#### Field Value
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.Name.HeatingEnergyVariable'></a>
+
+## Name\.HeatingEnergyVariable Field
+
+The output variable the heating need is read from: the sensible heating energy an ideal\-loads air system delivers to its zone, as the monthly calculation's need is sensible too\.
+
+```csharp
+public const string HeatingEnergyVariable = "Zone Ideal Loads Zone Sensible Heating Energy";
 ```
 
 #### Field Value

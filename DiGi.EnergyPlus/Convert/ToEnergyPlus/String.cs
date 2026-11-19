@@ -879,7 +879,7 @@ namespace DiGi.EnergyPlus
             Add("ZoneControl:Thermostat", ["Thermostat", Constants.Name.Zone, "Control Type", "ThermostatSetpoint:SingleHeating", "Heating Setpoint"]);
 
             // Output.
-            Add("Output:Variable", ["*", "Zone Ideal Loads Zone Sensible Heating Energy", "Monthly"]);
+            Add("Output:Variable", ["*", Constants.Name.HeatingEnergyVariable, "Monthly"]);
             Add("Output:Variable", ["*", "Zone Ideal Loads Zone Total Heating Energy", "Monthly"]);
             Add("Output:Table:SummaryReports", ["EnvelopeSummary"]);
             Add("OutputControl:Table:Style", ["Comma", "None"]);

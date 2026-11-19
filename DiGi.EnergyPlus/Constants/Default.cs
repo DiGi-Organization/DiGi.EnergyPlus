@@ -61,6 +61,11 @@ namespace DiGi.EnergyPlus.Constants
         public const string Roughness = "MediumRough";
 
         /// <summary>
+        /// The span without a line of output after which a run is ended [min]. EnergyPlus reports every simulated month, so a quiet run has hung.
+        /// </summary>
+        public const int RunInactivityTimeout = 10;
+
+        /// <summary>
         /// The thermal resistance of the placeholder construction of an adiabatic surface whose own construction cannot be written [m2K/W].
         /// </summary>
         public const double PlaceholderThermalResistance = 0.1;

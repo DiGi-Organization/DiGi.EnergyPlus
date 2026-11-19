@@ -1,17 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<!-- net10.0, not netstandard2.0: Modify.RunAsync logs through DiGi.Serilog, which targets net10.0 (DiGi-Organization/DiGi.EnergyPlus#1). -->
+		<TargetFramework>net10.0</TargetFramework>
 		<OutputPath>..\bin\</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<Nullable>enable</Nullable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="System.Text.Json" Version="10.0.9" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="DiGi.Analytical">
@@ -43,6 +40,12 @@
 		</Reference>
 		<Reference Include="DiGi.Geometry.Object">
 			<HintPath>..\..\DiGi.Geometry\bin\DiGi.Geometry.Object.dll</HintPath>
+		</Reference>
+		<Reference Include="DiGi.Python">
+			<HintPath>..\..\DiGi.Python\bin\DiGi.Python.dll</HintPath>
+		</Reference>
+		<Reference Include="DiGi.Serilog">
+			<HintPath>..\..\DiGi.Serilog\bin\DiGi.Serilog.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 

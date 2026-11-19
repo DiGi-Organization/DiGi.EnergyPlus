@@ -14,6 +14,29 @@ public static class Convert
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') → Convert
 ### Methods
 
+<a name='DiGi.EnergyPlus.Convert.ToDiGi_EnergyPlusResult(string)'></a>
+
+## Convert\.ToDiGi\_EnergyPlusResult\(string\) Method
+
+Reads the result of an EnergyPlus run from its run directory \(DiGi\-Organization/DiGi\.EnergyPlus\#1\), as `Modify.RunAsync` leaves it\.
+
+From [Error](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.Error 'DiGi\.EnergyPlus\.Constants\.FileName\.Error'): the version, and the warning and severe error counts of the completed run. From [Variables](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.Variables 'DiGi\.EnergyPlus\.Constants\.FileName\.Variables'): the monthly [HeatingEnergyVariable](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.Name.HeatingEnergyVariable 'DiGi\.EnergyPlus\.Constants\.Name\.HeatingEnergyVariable') of every ideal-loads air system, converted from J to kWh, January to December. From [Tables](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.Tables 'DiGi\.EnergyPlus\.Constants\.FileName\.Tables'), when present: the U-factor with film of every opaque external surface and the glass U-factor of every window of the envelope summary.
+
+```csharp
+public static DiGi.EnergyPlus.Classes.EnergyPlusResult? ToDiGi_EnergyPlusResult(string? directory);
+```
+#### Parameters
+
+<a name='DiGi.EnergyPlus.Convert.ToDiGi_EnergyPlusResult(string).directory'></a>
+
+`directory` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+The run directory\. This value can be null\.
+
+#### Returns
+[EnergyPlusResult](DiGi.EnergyPlus.Classes.md#DiGi.EnergyPlus.Classes.EnergyPlusResult 'DiGi\.EnergyPlus\.Classes\.EnergyPlusResult')  
+The [EnergyPlusResult](DiGi.EnergyPlus.Classes.md#DiGi.EnergyPlus.Classes.EnergyPlusResult 'DiGi\.EnergyPlus\.Classes\.EnergyPlusResult'), or null when the directory or a required file is missing, the run did not complete successfully, or no system reports 12 monthly heating energies\.
+
 <a name='DiGi.EnergyPlus.Convert.ToEnergyPlus_String(thisDiGi.Analytical.Building.Classes.BuildingModel,DiGi.EPW.Classes.EPWFile,DiGi.Analytical.Building.Energy.Classes.MonthlyClimate,DiGi.Analytical.Building.Regulation.Classes.TypologyData,DiGi.Analytical.Building.Energy.Classes.HeatDemandResult,System.Collections.Generic.IEnumerable_DiGi.Analytical.Building.Classes.BuildingModel_,double)'></a>
 
 ## Convert\.ToEnergyPlus\_String\(this BuildingModel, EPWFile, MonthlyClimate, TypologyData, HeatDemandResult, IEnumerable\<BuildingModel\>, double\) Method
@@ -82,3 +105,95 @@ The distance tolerance of the external shell and the triangulation\.
 #### Returns
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')  
 The text of the IDF, or null when the model, the climate or the heat demand is null, the climate has not 12 temperatures, or the model has no external shell\.
+
+<a name='DiGi.EnergyPlus.Modify'></a>
+
+## Modify Class
+
+```csharp
+public static class Modify
+```
+
+Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') → Modify
+### Methods
+
+<a name='DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken)'></a>
+
+## Modify\.RunAsync\(string, string, string, string, CancellationToken\) Method
+
+Runs EnergyPlus on an input file in a run directory \(DiGi\-Organization/DiGi\.EnergyPlus\#1\): writes the IDF as [Input](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.Input 'DiGi\.EnergyPlus\.Constants\.FileName\.Input'), copies the weather file as [Weather](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.Weather 'DiGi\.EnergyPlus\.Constants\.FileName\.Weather'), and runs the command line with ReadVarsESO \(`-r`\), so that `Convert.ToDiGi_EnergyPlusResult` can read the directory afterwards\.
+
+The output files the reader takes are deleted first, so a failed run never leaves the previous run's results to be read. The run is ended when it has written nothing for [RunInactivityTimeout](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.Default.RunInactivityTimeout 'DiGi\.EnergyPlus\.Constants\.Default\.RunInactivityTimeout') minutes or when [cancellationToken](DiGi.EnergyPlus.md#DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken).cancellationToken 'DiGi\.EnergyPlus\.Modify\.RunAsync\(string, string, string, string, System\.Threading\.CancellationToken\)\.cancellationToken') is cancelled. A failure is logged through DiGi.Serilog with the exit code and the trailing error output.
+
+```csharp
+public static System.Threading.Tasks.Task<bool> RunAsync(string? text, string? path_EPW, string? path_Executable, string? directory, System.Threading.CancellationToken cancellationToken=default(System.Threading.CancellationToken));
+```
+#### Parameters
+
+<a name='DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken).text'></a>
+
+`text` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+The text of the IDF, as `Convert.ToEnergyPlus_String` writes it\. This value can be null\.
+
+<a name='DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken).path_EPW'></a>
+
+`path_EPW` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+The path of the weather file\. This value can be null\.
+
+<a name='DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken).path_Executable'></a>
+
+`path_Executable` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+The path of the EnergyPlus executable, from [ExecutablePath\(string\)](DiGi.EnergyPlus.md#DiGi.EnergyPlus.Query.ExecutablePath(string) 'DiGi\.EnergyPlus\.Query\.ExecutablePath\(string\)')\. This value can be null\.
+
+<a name='DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken).directory'></a>
+
+`directory` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+The run directory; created when missing\. This value can be null\.
+
+<a name='DiGi.EnergyPlus.Modify.RunAsync(string,string,string,string,System.Threading.CancellationToken).cancellationToken'></a>
+
+`cancellationToken` [System\.Threading\.CancellationToken](https://learn.microsoft.com/en-us/dotnet/api/system.threading.cancellationtoken 'System\.Threading\.CancellationToken')
+
+The token that cancels the run\.
+
+#### Returns
+[System\.Threading\.Tasks\.Task&lt;](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1 'System\.Threading\.Tasks\.Task\`1')[System\.Boolean](https://learn.microsoft.com/en-us/dotnet/api/system.boolean 'System\.Boolean')[&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1 'System\.Threading\.Tasks\.Task\`1')  
+True when EnergyPlus exited with 0 and reports that it completed successfully; false when an argument is missing, a file does not exist, or the run failed\.
+
+<a name='DiGi.EnergyPlus.Query'></a>
+
+## Query Class
+
+```csharp
+public static class Query
+```
+
+Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') → Query
+### Methods
+
+<a name='DiGi.EnergyPlus.Query.ExecutablePath(string)'></a>
+
+## Query\.ExecutablePath\(string\) Method
+
+Gets the path of the EnergyPlus executable from [ExecutableConfiguration](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.FileName.ExecutableConfiguration 'DiGi\.EnergyPlus\.Constants\.FileName\.ExecutableConfiguration') in a directory \(DiGi\-Organization/DiGi\.EnergyPlus\#1\)\. The path is a machine setting, so it lives in a git\-ignored `user files` conf and never in code\.
+
+The conf holds `key=value` lines; blank lines and lines starting with `#` are skipped, and the key [ExecutablePathKey](DiGi.EnergyPlus.Constants.md#DiGi.EnergyPlus.Constants.Name.ExecutablePathKey 'DiGi\.EnergyPlus\.Constants\.Name\.ExecutablePathKey') names the executable, for example `ExecutablePath=C:\EnergyPlusV26-2-0\energyplus.exe`.
+
+```csharp
+public static string? ExecutablePath(string? directory);
+```
+#### Parameters
+
+<a name='DiGi.EnergyPlus.Query.ExecutablePath(string).directory'></a>
+
+`directory` [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+The directory holding the conf, typically a `user files` directory\. This value can be null\.
+
+#### Returns
+[System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')  
+The path of the executable, or null when the directory, the conf, its key or the executable does not exist\.

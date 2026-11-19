@@ -29,5 +29,15 @@ namespace DiGi.EnergyPlus.Constants
         /// The name of the hidden surface that carries the thermal bridges.
         /// </summary>
         public const string ThermalBridgeSurface = "Thermal Bridges";
+
+        /// <summary>
+        /// The output variable the heating need is read from: the sensible heating energy an ideal-loads air system delivers to its zone, as the monthly calculation's need is sensible too.
+        /// </summary>
+        public const string HeatingEnergyVariable = "Zone Ideal Loads Zone Sensible Heating Energy";
+
+        /// <summary>
+        /// The key of the executable path in <see cref="FileName.ExecutableConfiguration"/>.
+        /// </summary>
+        public const string ExecutablePathKey = "ExecutablePath";
     }
 }
