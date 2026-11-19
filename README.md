@@ -13,10 +13,28 @@ calculation, and runs without a user interface. It replaced EDSL Tas for this co
 
 ## 🏗️ Project Architecture & Assemblies
 
-The repository is being set up under
-[#1](https://github.com/DiGi-Organization/DiGi.EnergyPlus/issues/1). It will contain:
-* **DiGi.EnergyPlus** (`netstandard2.0`) - the IDF writer (`Convert.ToEnergyPlus_String`), the command-line runner
-  (`Modify.RunAsync`) and the results reader (`Convert.ToDiGi_EnergyPlusResult`).
+The repository contains the following assemblies:
+* **[DiGi.EnergyPlus](DiGi.EnergyPlus)** (Path: `DiGi.EnergyPlus\DiGi.EnergyPlus`, `netstandard2.0`) - the IDF writer
+  `Convert.ToEnergyPlus_String`, written for EnergyPlus 26.2. The command-line runner (`Modify.RunAsync`) and the results
+  reader (`Convert.ToDiGi_EnergyPlusResult`) follow under
+  [#1](https://github.com/DiGi-Organization/DiGi.EnergyPlus/issues/1).
+
+### What the IDF carries
+
+The comparison isolates what the monthly method approximates - the dynamics, the solar gains and the gain utilisation -
+so every steady-state input is DiGi's own:
+
+| | Written as |
+|---|---|
+| Zone | one zone per building, with the volume and floor area of the monthly calculation |
+| Walls, roofs, floors over air | layered constructions, outermost layer first, matched to DiGi's U (a declared U wins) |
+| Party walls, components of unknown U | adiabatic |
+| Floor on the ground or over the cellar | U = H_g / A (or H_U / A) to the monthly mean external temperature |
+| Thermal bridges | one hidden surface carrying H_tb to the outdoor dry-bulb temperature |
+| Windows | `WindowMaterial:SimpleGlazingSystem`, U the declared Uw, SHGC = g·A_g / A_w |
+| Floors and walls between spaces | internal mass, each face the half of the construction on its side |
+| Neighbours | building shading |
+| Gains, ventilation, set-point | the constant values of the monthly calculation; an ideal-loads system heats |
 
 The model it exports is the one the heat-demand engine calculates on, taken from DiGi.GIS.Analytical
 `Create.HeatDemandPreparationResult`, so the export cannot drift from the engine's own preparation.
