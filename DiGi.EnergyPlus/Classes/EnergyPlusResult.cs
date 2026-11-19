@@ -7,10 +7,13 @@ using System.Text.Json.Serialization;
 namespace DiGi.EnergyPlus.Classes
 {
     /// <summary>
-    /// Represents the heating need EnergyPlus calculated for a building written by <c>Convert.ToEnergyPlus_String</c> (DiGi-Organization/DiGi.EnergyPlus#1): the 12 monthly and the annual sensible heating energy of the ideal-loads air systems, per system and in total, the thermal transmittances EnergyPlus reports for the external surfaces, the EnergyPlus version and the warning and severe error counts of the run. Created by <c>Convert.ToDiGi_EnergyPlusResult</c> from the output of a run; the constructor only assigns and copies.
+    /// Represents the heating need EnergyPlus calculated for a building written by <c>Convert.ToEnergyPlus_String</c> (DiGi-Organization/DiGi.EnergyPlus#1): the 12 monthly and the annual sensible heating energy of the ideal-loads air systems, per system and in total, the thermal transmittances EnergyPlus reports for the external surfaces, their areas, the EnergyPlus version and the warning and severe error counts of the run. Created by <c>Convert.ToDiGi_EnergyPlusResult</c> from the output of a run; the constructor only assigns and copies.
     /// </summary>
     public class EnergyPlusResult : SerializableResult, IEnergyPlusSerializableObject
     {
+        [JsonInclude, JsonPropertyName(nameof(Areas))]
+        private readonly Dictionary<string, double>? areas;
+
         [JsonInclude, JsonPropertyName(nameof(EnergyPlusVersion))]
         private readonly string? energyPlusVersion;
 
@@ -39,11 +42,21 @@ namespace DiGi.EnergyPlus.Classes
         /// <param name="heatingEnergy">The annual sensible heating energy of every ideal-loads air system [kWh].</param>
         /// <param name="heatingEnergies">The monthly sensible heating energy of every ideal-loads air system, January to December [kWh].</param>
         /// <param name="systemHeatingEnergies">The monthly sensible heating energy of each ideal-loads air system, January to December [kWh], keyed by its name as EnergyPlus reports it.</param>
-        /// <param name="thermalTransmittances">The thermal transmittance EnergyPlus reports for each external surface [W/(m2K)]: the U-factor with film of an opaque surface, the glass U-factor of a window, keyed by the surface name in lower case.</param>
+        /// <param name="thermalTransmittances">The thermal transmittance EnergyPlus reports for each external surface [W/(m2K)]: the U-factor with film of an opaque surface or a door, the glass U-factor of a window, keyed by the surface name in lower case.</param>
+        /// <param name="areas">The area EnergyPlus reports for each external surface [m2]: the net area of an opaque surface, the area of a window or a door, keyed like <paramref name="thermalTransmittances"/>.</param>
         /// <param name="warningCount">The number of warnings of the run.</param>
         /// <param name="severeErrorCount">The number of severe errors of the run.</param>
-        public EnergyPlusResult(string? energyPlusVersion, double heatingEnergy, IEnumerable<double>? heatingEnergies, IDictionary<string, List<double>>? systemHeatingEnergies, IDictionary<string, double>? thermalTransmittances, int warningCount, int severeErrorCount)
+        public EnergyPlusResult(
+            string? energyPlusVersion,
+            double heatingEnergy,
+            IEnumerable<double>? heatingEnergies,
+            IDictionary<string, List<double>>? systemHeatingEnergies,
+            IDictionary<string, double>? thermalTransmittances,
+            IDictionary<string, double>? areas,
+            int warningCount,
+            int severeErrorCount)
         {
+            this.areas = areas is null ? null : new Dictionary<string, double>(areas);
             this.energyPlusVersion = energyPlusVersion;
             this.heatingEnergy = heatingEnergy;
             this.heatingEnergies = heatingEnergies is null ? null : [.. heatingEnergies];
@@ -70,6 +83,7 @@ namespace DiGi.EnergyPlus.Classes
         {
             if (energyPlusResult is not null)
             {
+                areas = energyPlusResult.areas is null ? null : new Dictionary<string, double>(energyPlusResult.areas);
                 energyPlusVersion = energyPlusResult.energyPlusVersion;
                 heatingEnergy = energyPlusResult.heatingEnergy;
                 heatingEnergies = energyPlusResult.heatingEnergies is null ? null : [.. energyPlusResult.heatingEnergies];
@@ -95,6 +109,18 @@ namespace DiGi.EnergyPlus.Classes
         public EnergyPlusResult(JsonObject? jsonObject)
             : base(jsonObject)
         {
+        }
+
+        /// <summary>
+        /// Gets a copy of the area EnergyPlus reports for each external surface [m2]: the net area of an opaque surface (its openings subtracted) and the area of a window or a door, keyed like <see cref="ThermalTransmittances"/>. With them, Σ U·A is the direct heat transfer coefficient EnergyPlus sees.
+        /// </summary>
+        [JsonIgnore]
+        public Dictionary<string, double>? Areas
+        {
+            get
+            {
+                return areas is null ? null : new Dictionary<string, double>(areas);
+            }
         }
 
         /// <summary>
@@ -169,7 +195,7 @@ namespace DiGi.EnergyPlus.Classes
         }
 
         /// <summary>
-        /// Gets a copy of the thermal transmittance EnergyPlus reports for each external surface [W/(m2K)]: the U-factor with film of an opaque surface (EnergyPlus's own film coefficients, not R_si and R_se of PN-EN ISO 6946) and the glass U-factor of a window. Keyed by the surface name in lower case: EnergyPlus reports names upper-cased, and a surface written by <c>Convert.ToEnergyPlus_String</c> is named after its component's identifier in the "D" format.
+        /// Gets a copy of the thermal transmittance EnergyPlus reports for each external surface [W/(m2K)]: the U-factor with film of an opaque surface or a door (EnergyPlus's own film coefficients, not R_si and R_se of PN-EN ISO 6946) and the glass U-factor of a window. Keyed by the surface name in lower case: EnergyPlus reports names upper-cased, and a surface written by <c>Convert.ToEnergyPlus_String</c> is named after its component's identifier in the "D" format.
         /// </summary>
         [JsonIgnore]
         public Dictionary<string, double>? ThermalTransmittances

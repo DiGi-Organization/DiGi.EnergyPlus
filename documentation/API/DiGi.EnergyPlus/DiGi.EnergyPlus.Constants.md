@@ -16,6 +16,19 @@ public static class Default
 Inheritance [System\.Object](https://learn.microsoft.com/en-us/dotnet/api/system.object 'System\.Object') → Default
 ### Fields
 
+<a name='DiGi.EnergyPlus.Constants.Default.CollinearSine'></a>
+
+## Default\.CollinearSine Field
+
+The sine of the turn below which a vertex counts as collinear with its neighbours and is deleted before a ring is written \(about 0\.3°\)\. EnergyPlus judges collinearity by the angle too, spikes included: a 0\.16 m by 80 m wedge of a triangulated neighbour, its apex angle 0\.014°, was left with fewer than three vertices \(DiGi\-Organization/DiGi\.EnergyPlus\#1\)\.
+
+```csharp
+public const double CollinearSine = 0.005;
+```
+
+#### Field Value
+[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
+
 <a name='DiGi.EnergyPlus.Constants.Default.MaximumLayerCount'></a>
 
 ## Default\.MaximumLayerCount Field
@@ -41,6 +54,19 @@ public const int MaximumWarmupDays = 50;
 
 #### Field Value
 [System\.Int32](https://learn.microsoft.com/en-us/dotnet/api/system.int32 'System\.Int32')
+
+<a name='DiGi.EnergyPlus.Constants.Default.MinimumAdjustmentThermalResistance'></a>
+
+## Default\.MinimumAdjustmentThermalResistance Field
+
+The smallest shortfall of a construction's layer resistance that is made up by a massless layer of its own \[m2K/W\]\. A smaller one is made up by scaling the layers: a near\-zero `Material:NoMass` outermost stopped EnergyPlus finding the conduction transfer functions of a brick wall with internal insulation \(DiGi\-Organization/DiGi\.EnergyPlus\#1\)\.
+
+```csharp
+public const double MinimumAdjustmentThermalResistance = 0.1;
+```
+
+#### Field Value
+[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
 <a name='DiGi.EnergyPlus.Constants.Default.MinimumThermalResistance'></a>
 
@@ -171,6 +197,19 @@ public const string Version = "26.2";
 
 #### Field Value
 [System\.String](https://learn.microsoft.com/en-us/dotnet/api/system.string 'System\.String')
+
+<a name='DiGi.EnergyPlus.Constants.Default.VertexTolerance'></a>
+
+## Default\.VertexTolerance Field
+
+The distance within which a vertex counts as coincident with its predecessor or collinear with its neighbours, and is deleted before a ring is written \[m\]\. EnergyPlus deletes such vertices itself and drops a surface left with fewer than three\.
+
+```csharp
+public const double VertexTolerance = 0.01;
+```
+
+#### Field Value
+[System\.Double](https://learn.microsoft.com/en-us/dotnet/api/system.double 'System\.Double')
 
 <a name='DiGi.EnergyPlus.Constants.Default.VisibleAbsorptance'></a>
 

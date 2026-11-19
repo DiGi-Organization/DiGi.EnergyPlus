@@ -11,7 +11,7 @@ namespace DiGi.EnergyPlus
     {
         /// <summary>
         /// Reads the result of an EnergyPlus run from its run directory (DiGi-Organization/DiGi.EnergyPlus#1), as <c>Modify.RunAsync</c> leaves it.
-        /// <para>From <see cref="Constants.FileName.Error"/>: the version, and the warning and severe error counts of the completed run. From <see cref="Constants.FileName.Variables"/>: the monthly <see cref="Constants.Name.HeatingEnergyVariable"/> of every ideal-loads air system, converted from J to kWh, January to December. From <see cref="Constants.FileName.Tables"/>, when present: the U-factor with film of every opaque external surface and the glass U-factor of every window of the envelope summary.</para>
+        /// <para>From <see cref="Constants.FileName.Error"/>: the version, and the warning and severe error counts of the completed run. From <see cref="Constants.FileName.Variables"/>: the monthly <see cref="Constants.Name.HeatingEnergyVariable"/> of every ideal-loads air system, converted from J to kWh, January to December. From <see cref="Constants.FileName.Tables"/>, when present: the U-factor with film and the net area of every opaque external surface, the glass U-factor and area of every window, and the U-factor with film and area of every door, of the envelope summary - EnergyPlus reports doors in a table of their own.</para>
         /// </summary>
         /// <param name="directory">The run directory. This value can be null.</param>
         /// <returns>The <see cref="EnergyPlusResult"/>, or null when the directory or a required file is missing, the run did not complete successfully, or no system reports 12 monthly heating energies.</returns>
@@ -98,13 +98,15 @@ namespace DiGi.EnergyPlus
 
             // Thermal transmittances of the envelope summary, keyed by the surface name in lower case.
             Dictionary<string, double>? thermalTransmittances = null;
+            Dictionary<string, double>? areas = null;
             string path_Tables = Path.Combine(directory, Constants.FileName.Tables);
             if (File.Exists(path_Tables))
             {
                 string[] lines_Tables = File.ReadAllLines(path_Tables);
                 thermalTransmittances = [];
+                areas = [];
 
-                foreach ((string Section, string Column) table in new[] { ("Opaque Exterior", "U-Factor with Film [W/m2-K]"), ("Exterior Fenestration", "Glass U-Factor [W/m2-K]") })
+                foreach ((string Section, string Column, string Column_Area) table in new[] { ("Opaque Exterior", "U-Factor with Film [W/m2-K]", "Net Area [m2]"), ("Exterior Fenestration", "Glass U-Factor [W/m2-K]", "Area of Multiplied Openings [m2]"), ("Exterior Door", "U-Factor with Film [W/m2-K]", "Gross Area [m2]") })
                 {
                     int index_Section = Array.FindIndex(lines_Tables, x => x.Trim() == table.Section);
                     if (index_Section < 0)
@@ -123,7 +125,9 @@ namespace DiGi.EnergyPlus
                         continue;
                     }
 
-                    int index_Column = Array.FindIndex(lines_Tables[index_Header].Split(','), x => x.Trim() == table.Column);
+                    string[] headers_Table = lines_Tables[index_Header].Split(',');
+                    int index_Column = Array.FindIndex(headers_Table, x => x.Trim() == table.Column);
+                    int index_Area = Array.FindIndex(headers_Table, x => x.Trim() == table.Column_Area);
                     if (index_Column < 0)
                     {
                         continue;
@@ -139,15 +143,21 @@ namespace DiGi.EnergyPlus
                             continue;
                         }
 
+                        string name = values[1].Trim().ToLowerInvariant();
                         if (double.TryParse(values[index_Column].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double thermalTransmittance))
                         {
-                            thermalTransmittances[values[1].Trim().ToLowerInvariant()] = thermalTransmittance;
+                            thermalTransmittances[name] = thermalTransmittance;
+                        }
+
+                        if (index_Area >= 0 && index_Area < values.Length && double.TryParse(values[index_Area].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double area))
+                        {
+                            areas[name] = area;
                         }
                     }
                 }
             }
 
-            return new EnergyPlusResult(energyPlusVersion, heatingEnergy, heatingEnergies, systemHeatingEnergies, thermalTransmittances, warningCount, severeErrorCount);
+            return new EnergyPlusResult(energyPlusVersion, heatingEnergy, heatingEnergies, systemHeatingEnergies, thermalTransmittances, areas, warningCount, severeErrorCount);
         }
     }
 }

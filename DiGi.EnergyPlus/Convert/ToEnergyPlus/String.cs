@@ -27,7 +27,7 @@ namespace DiGi.EnergyPlus
         /// Writes a prepared building model as an EnergyPlus input file (IDF) for <see cref="Constants.Default.Version"/>, so that EnergyPlus calculates the heating need of exactly what the PN-EN ISO 52016-1 monthly calculation of DiGi.Analytical.Building.Energy calculated (DiGi-Organization/DiGi.EnergyPlus#1). The comparison is meant to isolate the dynamics, the solar gains and the utilisation factor, so every steady-state input is DiGi's own.
         /// <para><b>Zone.</b> The building is one zone, as the monthly calculation treats it, with the volume and floor area of <paramref name="heatDemandResult"/>. Its surfaces are the faces of <see cref="BuildingModel.GetExternalShell(Side?, Orientation?, Orientation?, double)"/> with outward normals, counter-clockwise seen from outside; a face with holes is triangulated. Coordinates are moved so that the lowest corner of the model's bounding box is the origin, which keeps GIS coordinates out of the file and puts the ground at zero height.</para>
         /// <para><b>Boundaries.</b> Components are classified by <c>Regulation.Query.ConstructionRoles</c> and the floor rule of the monthly calculation. External walls, roofs and floors over outside air face outdoors. Party walls, components the calculation leaves out because their U is not known, and any other face of the shell are adiabatic. Floors on the ground or over the cellar face an other-side temperature held at the monthly mean external temperature of <paramref name="monthlyClimate"/>, with a construction whose U is H_g / ΣA (or H_U / ΣA over the cellar) of <paramref name="heatDemandResult"/>: the steady-state PN-EN ISO 13370 result of the monthly calculation, not a ground model of EnergyPlus. The thermal bridges H_tb are one hidden surface of U <see cref="Constants.Default.ThermalBridgeThermalTransmittance"/> whose outside face follows the hourly outdoor dry-bulb temperature.</para>
-        /// <para><b>Constructions.</b> Layers are written outermost first, the order of a DiGi construction, and keep their mass. The steady-state U is DiGi's own (a declared U wins, as in the calculation): when the layers' resistance falls short of it, a <c>Material:NoMass</c> layer is added outermost; when it exceeds it, the resistance of every layer is scaled down. A construction with a declared U and no usable layers becomes one <c>Material:NoMass</c> of R = 1/U − R_si − R_se. Components bounding two spaces are internal mass: each face gets the half of the construction on its side.</para>
+        /// <para><b>Constructions.</b> Layers are written outermost first, the order of a DiGi construction, and keep their mass. The steady-state U is DiGi's own (a declared U wins, as in the calculation): when the layers' resistance falls short of it by at least <see cref="Constants.Default.MinimumAdjustmentThermalResistance"/>, a <c>Material:NoMass</c> layer is added outermost; otherwise the resistance of every layer is scaled to it. A construction with a declared U and no usable layers becomes one <c>Material:NoMass</c> of R = 1/U − R_si − R_se. Components bounding two spaces are internal mass: each face gets the half of the construction on its side.</para>
         /// <para><b>Openings.</b> Openings with a total solar energy transmittance are windows (glass doors for doors) of <c>WindowMaterial:SimpleGlazingSystem</c> with U the declared Uw over the outline and SHGC = g·A_g / A_w, so the glazed area is the one the calculation uses; EnergyPlus models the incidence angle itself, so the non-perpendicular incidence factor is not applied again. Openings without one are opaque doors of a <c>Material:NoMass</c> with the same U. An outline of more than four vertices is triangulated, since EnergyPlus accepts three or four.</para>
         /// <para><b>Loads.</b> The constant internal gain, the ventilation and infiltration flow (one flow carrying H_ve, at the standard air density) and the heating set-point are those of <paramref name="heatDemandResult"/>. An ideal-loads air system heats the zone with no limit and no cooling. The monthly sensible and total heating energy of the ideal loads and the envelope summary are reported.</para>
         /// <para>Every simplification that changes what is written - an excluded component, a triangulated face, a construction that could not be written as layers - is listed in comment lines at the top of the file.</para>
@@ -156,7 +156,7 @@ namespace DiGi.EnergyPlus
                 return vector3D_1 is null || vector3D_2 is null ? double.NaN : (vector3D_1.X * vector3D_2.X) + (vector3D_1.Y * vector3D_2.Y) + (vector3D_1.Z * vector3D_2.Z);
             }
 
-            // The points of a ring turned to follow the given normal.
+            // The points of a ring turned to follow the given normal, or null for a degenerate ring.
             static List<Point3D>? Oriented(IEnumerable<Point3D>? point3Ds, Vector3D? normal)
             {
                 if (point3Ds is null)
@@ -164,14 +164,57 @@ namespace DiGi.EnergyPlus
                     return null;
                 }
 
+                // EnergyPlus deletes coincident and collinear vertices itself and drops a ring left with fewer than three, so they are deleted here first.
                 List<Point3D> result = [.. point3Ds];
+                bool removed = true;
+                while (removed && result.Count >= 3)
+                {
+                    removed = false;
+                    for (int i = 0; i < result.Count && result.Count >= 3; i++)
+                    {
+                        Point3D point3D_Previous = result[(i + result.Count - 1) % result.Count];
+                        Point3D point3D = result[i];
+                        Point3D point3D_Next = result[(i + 1) % result.Count];
+
+                        double x1 = point3D.X - point3D_Previous.X, y1 = point3D.Y - point3D_Previous.Y, z1 = point3D.Z - point3D_Previous.Z;
+                        double x2 = point3D_Next.X - point3D_Previous.X, y2 = point3D_Next.Y - point3D_Previous.Y, z2 = point3D_Next.Z - point3D_Previous.Z;
+                        double length_Previous = System.Math.Sqrt((x1 * x1) + (y1 * y1) + (z1 * z1));
+                        double length_Chord = System.Math.Sqrt((x2 * x2) + (y2 * y2) + (z2 * z2));
+
+                        // Distance of the vertex from the chord of its neighbours: |a × b| / |b|.
+                        double cx = (y1 * z2) - (z1 * y2), cy = (z1 * x2) - (x1 * z2), cz = (x1 * y2) - (y1 * x2);
+                        double distance_Chord = length_Chord > 0 ? System.Math.Sqrt((cx * cx) + (cy * cy) + (cz * cz)) / length_Chord : length_Previous;
+
+                        // EnergyPlus also judges collinearity by the angle, whichever way the edges run: the near-straight vertex of a long
+                        // sliver and the spike of a thin wedge both go, and a ring left with fewer than three vertices is dropped.
+                        double x3 = point3D_Next.X - point3D.X, y3 = point3D_Next.Y - point3D.Y, z3 = point3D_Next.Z - point3D.Z;
+                        double dx = (y1 * z3) - (z1 * y3), dy = (z1 * x3) - (x1 * z3), dz = (x1 * y3) - (y1 * x3);
+                        double length_Next = System.Math.Sqrt((x3 * x3) + (y3 * y3) + (z3 * z3));
+                        double sine = length_Previous > 0 && length_Next > 0 ? System.Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz)) / (length_Previous * length_Next) : 0.0;
+                        bool straight = sine < Constants.Default.CollinearSine;
+
+                        if (length_Previous < Constants.Default.VertexTolerance || distance_Chord < Constants.Default.VertexTolerance || straight)
+                        {
+                            result.RemoveAt(i);
+                            removed = true;
+                            i--;
+                        }
+                    }
+                }
+
                 if (result.Count < 3)
                 {
                     return null;
                 }
 
+                // A degenerate ring - collinear points, as a triangulation can leave - has no normal and is left out.
                 Vector3D? normal_Ring = Geometry.Spatial.Query.Normal(result);
-                if (normal is not null && normal_Ring is not null && Dot(normal, normal_Ring) < 0)
+                if (normal_Ring is null)
+                {
+                    return null;
+                }
+
+                if (normal is not null && Dot(normal, normal_Ring) < 0)
                 {
                     result.Reverse();
                 }
@@ -188,7 +231,10 @@ namespace DiGi.EnergyPlus
                     return result;
                 }
 
-                if (polygonalFace3D_Temp.InternalEdges is { Count: > 0 })
+                List<Point3D>? point3Ds_Outline = Oriented(polygonalFace3D_Temp.ExternalEdge?.GetPoints(), normal);
+
+                // EnergyPlus casts shadows only from convex surfaces: a face with holes or a non-convex outline is written as triangles.
+                if (polygonalFace3D_Temp.InternalEdges is { Count: > 0 } || (point3Ds_Outline is not null && !Convex(point3Ds_Outline)))
                 {
                     List<Triangle3D>? triangle3Ds = polygonalFace3D_Temp.Triangulate(tolerance);
                     if (triangle3Ds is not null)
@@ -202,16 +248,45 @@ namespace DiGi.EnergyPlus
                         }
                     }
 
-                    notes.Add(name + ": face with holes written as " + result.Count.ToString(CultureInfo.InvariantCulture) + " triangles");
+                    notes.Add(name + ": face with holes or non-convex written as " + result.Count.ToString(CultureInfo.InvariantCulture) + " triangles");
                     return result;
                 }
 
-                if (Oriented(polygonalFace3D_Temp.ExternalEdge?.GetPoints(), normal) is List<Point3D> point3Ds)
+                if (point3Ds_Outline is not null)
                 {
-                    result.Add(point3Ds);
+                    result.Add(point3Ds_Outline);
                 }
 
                 return result;
+            }
+
+            // Whether a planar ring turns the same way at every vertex; collinear vertices do not count against it.
+            static bool Convex(List<Point3D> point3Ds)
+            {
+                Vector3D? normal_Ring = Geometry.Spatial.Query.Normal(point3Ds);
+                if (normal_Ring is null)
+                {
+                    return true;
+                }
+
+                for (int i = 0; i < point3Ds.Count; i++)
+                {
+                    Point3D point3D_Previous = point3Ds[(i + point3Ds.Count - 1) % point3Ds.Count];
+                    Point3D point3D = point3Ds[i];
+                    Point3D point3D_Next = point3Ds[(i + 1) % point3Ds.Count];
+
+                    double x1 = point3D.X - point3D_Previous.X, y1 = point3D.Y - point3D_Previous.Y, z1 = point3D.Z - point3D_Previous.Z;
+                    double x2 = point3D_Next.X - point3D.X, y2 = point3D_Next.Y - point3D.Y, z2 = point3D_Next.Z - point3D.Z;
+                    double turn = (((y1 * z2) - (z1 * y2)) * normal_Ring.X) + (((z1 * x2) - (x1 * z2)) * normal_Ring.Y) + (((x1 * y2) - (y1 * x2)) * normal_Ring.Z);
+                    double scale = System.Math.Sqrt((x1 * x1) + (y1 * y1) + (z1 * z1)) * System.Math.Sqrt((x2 * x2) + (y2 * y2) + (z2 * z2));
+                    // EnergyPlus counts any reflex vertex, however slight, against convexity.
+                    if (turn < -Core.Constants.Tolerance.Distance * scale)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             static string LayerStem(IMaterial? material, double thickness)
@@ -357,7 +432,7 @@ namespace DiGi.EnergyPlus
                 {
                     materials = layers.ConvertAll(x => LayerName(x, 1.0));
                 }
-                else if (thermalResistance_Layers < thermalResistance)
+                else if (thermalResistance - thermalResistance_Layers >= Constants.Default.MinimumAdjustmentThermalResistance)
                 {
                     // Too little resistance: a massless layer outermost makes up the difference.
                     materials.Add(NoMassName(stem + " adjustment R " + FormatShort(thermalResistance - thermalResistance_Layers), thermalResistance - thermalResistance_Layers, 0.7));
@@ -365,7 +440,9 @@ namespace DiGi.EnergyPlus
                 }
                 else
                 {
-                    // Too much resistance: every layer keeps its mass and loses resistance in proportion.
+                    // Too much resistance, or too little to be worth a layer of its own (a near-zero massless layer
+                    // stops EnergyPlus finding conduction transfer functions): every layer keeps its mass and its
+                    // resistance is scaled in proportion.
                     double factor = thermalResistance / thermalResistance_Layers;
                     materials = layers.ConvertAll(x => LayerName(x, factor));
                     notes.Add(noteName + ": layer resistances scaled by " + FormatShort(factor) + " to the U of the calculation");

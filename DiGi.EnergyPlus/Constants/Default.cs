@@ -31,6 +31,21 @@ namespace DiGi.EnergyPlus.Constants
         public const double MinimumThermalResistance = 0.001;
 
         /// <summary>
+        /// The distance within which a vertex counts as coincident with its predecessor or collinear with its neighbours, and is deleted before a ring is written [m]. EnergyPlus deletes such vertices itself and drops a surface left with fewer than three.
+        /// </summary>
+        public const double VertexTolerance = 0.01;
+
+        /// <summary>
+        /// The sine of the turn below which a vertex counts as collinear with its neighbours and is deleted before a ring is written (about 0.3°). EnergyPlus judges collinearity by the angle too, spikes included: a 0.16 m by 80 m wedge of a triangulated neighbour, its apex angle 0.014°, was left with fewer than three vertices (DiGi-Organization/DiGi.EnergyPlus#1).
+        /// </summary>
+        public const double CollinearSine = 0.005;
+
+        /// <summary>
+        /// The smallest shortfall of a construction's layer resistance that is made up by a massless layer of its own [m2K/W]. A smaller one is made up by scaling the layers: a near-zero <c>Material:NoMass</c> outermost stopped EnergyPlus finding the conduction transfer functions of a brick wall with internal insulation (DiGi-Organization/DiGi.EnergyPlus#1).
+        /// </summary>
+        public const double MinimumAdjustmentThermalResistance = 0.1;
+
+        /// <summary>
         /// The largest number of layers of an EnergyPlus <c>Construction</c>.
         /// </summary>
         public const int MaximumLayerCount = 10;
